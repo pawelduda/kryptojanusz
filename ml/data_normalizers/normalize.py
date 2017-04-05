@@ -3,8 +3,9 @@ import numpy
 from features.simple_10_day_moving_average import simple_10_day_moving_average
 
 # https://www.researchgate.net/publication/222043783_Predicting_direction_of_stock_price_index_movement_using_artificial_neural_networks_and_support_vector_machines_The_sample_of_the_Istanbul_Stock_Exchange
+# http://ta-lib.org/function.html
 # Features:
-# [ ] 10-day moving average
+# [X] 10-day moving average
 # [ ] weighted 10-day moving average
 # [ ] momentum
 # [ ] Stochastic K%
