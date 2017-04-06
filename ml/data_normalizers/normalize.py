@@ -4,6 +4,14 @@ import pandas as pd
 
 from features.simple_10_day_moving_average import simple_10_day_moving_average
 
+def future_change(current_price, future_price):
+    if current_price > future_price:
+        return -1
+    elif current_price == future_price:
+        return 0
+    elif current_price < future_price:
+        return 1
+
 # TODO: ensure that weightedAverage is calculated based on last 10 days
 # https://www.researchgate.net/publication/222043783_Predicting_direction_of_stock_price_index_movement_using_artificial_neural_networks_and_support_vector_machines_The_sample_of_the_Istanbul_Stock_Exchange
 # http://ta-lib.org/function.html
@@ -42,22 +50,13 @@ willr = talib.WILLR(df['high'].values, df['low'].values, df['close'].values)
 adosc = talib.ADOSC(df['high'].values, df['low'].values, df['close'].values, df['quoteVolume'].values)
 cci = talib.CCI(df['high'].values, df['low'].values, df['close'].values)
 
-
-# input_btc_eth_file = open('../btc_historical_data/data/BTC_ETH.csv')
-# input_btc_eth_file.readline()
-# data = numpy.loadtxt(
-#     input_btc_eth_file,
-#     delimiter=',',
-#     dtype={
-#         'names': ('date', 'high', 'low', 'open', 'close', 'volume', 'quoteVolume', 'weightedAverage'),
-#         'formats': ('int', '<f8', '<f8', '<f8', '<f8', '<f8', '<f8', '<f8')
-#     }
-# )
-
 output_file = open('../btc_historical_data/normalized_data/BTC_ETH_normalized.csv', 'w')
 for i in range(0, len(df)):
+    if i + 10 >= len(df):
+        break
+
     output_file.write(
-        '{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12}\n'.format(
+        '{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13}\n'.format(
             # Features
             sma[i],
             wma[i],
@@ -72,44 +71,9 @@ for i in range(0, len(df)):
             adosc[i],
             cci[i],
             # Labels
-            df['close'].values[i] if i + 10 >= len(df) else df['close'].values[i + 10]
+            df['close'].values[i] if i + 10 >= len(df) else df['close'].values[i + 10],
+            future_change(df['close'].values[i], df['close'].values[i + 10])
         )
     )
 
-#     last_ten_day_close_values = []
-
-
-# ten_days_seconds = 864000
-# first_entry_timestamp = data[0][0]
-
-# for i, row in enumerate(data[1:]):
-#     last_ten_day_close_values = []
-
-#     print(i)
-
-#     # get all values for last 10 days
-#     # TODO: this should be optimized
-#     current_timestamp = row[0]
-#     for j in range(i, 0, -1):
-#         if data[i][0] - data[j][0] <= 864000:
-#             last_ten_day_close_values.append(data[j][4])
-#         else:
-#             break
-
-#     if len(last_ten_day_close_values) > 0:
-#         ten_day_moving_average = simple_10_day_moving_average(last_ten_day_close_values)
-#     else:
-#         ten_day_moving_average = 'n/a'
-
-#     output_file.write(
-#         # weightedAverage, change (-1 if decrease, 0 if equal, 1 if increase)
-#         '{0},{1},{2},{3}\n'.format(
-#             data[i - 1][-1],
-#             data[i][-1],
-#             ten_day_moving_average,
-#             data[i][7] # weightedAverage
-#         )
-#     )
-
-# input_btc_eth_file.close()
-# output_file.close()
+output_file.close()
