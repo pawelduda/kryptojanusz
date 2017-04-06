@@ -30,22 +30,17 @@ from features.simple_10_day_moving_average import simple_10_day_moving_average
 # print(output)
 
 df = pd.read_csv('../btc_historical_data/data/BTC_ETH.csv', sep=',', header=0, low_memory=False)
-print 'dupa'
+
 print df
-print talib.SMA(df['close'].values) # TODO: tweak timeperiod to be 10 days
-print talib.WMA(df['close'].values) # TODO: tweak timeperiod to be 10 days
-print talib.MOM(df['close'].values)
-stoch = talib.STOCH(df['high'].values, df['low'].values, df['close'].values)
-print stoch[0] # Stochastic K%
-print stoch[1] # Stochastic D%
-print talib.RSI(df['close'].values)
-macd = talib.MACD(df['close'].values)
-print macd[0] # MACD ?
-print macd[1] # MACD signal ?
-print macd[2] # MACD histogram ?
-print talib.WILLR(df['high'].values, df['low'].values, df['close'].values)
-print talib.ADOSC(df['high'].values, df['low'].values, df['close'].values, df['quoteVolume'].values)
-print talib.CCI(df['high'].values, df['low'].values, df['close'].values)
+sma = talib.SMA(df['close'].values) # TODO: tweak timeperiod to be 10 days
+wma = talib.WMA(df['close'].values) # TODO: tweak timeperiod to be 10 days
+mom = talib.MOM(df['close'].values)
+stoch_k, stoch_d = talib.STOCH(df['high'].values, df['low'].values, df['close'].values)
+rsi = talib.RSI(df['close'].values)
+macd, macd_signal, macd_hist = talib.MACD(df['close'].values)
+willr = talib.WILLR(df['high'].values, df['low'].values, df['close'].values)
+adosc = talib.ADOSC(df['high'].values, df['low'].values, df['close'].values, df['quoteVolume'].values)
+cci = talib.CCI(df['high'].values, df['low'].values, df['close'].values)
 
 
 # input_btc_eth_file = open('../btc_historical_data/data/BTC_ETH.csv')
@@ -59,7 +54,30 @@ print talib.CCI(df['high'].values, df['low'].values, df['close'].values)
 #     }
 # )
 
-# output_file = open('../btc_historical_data/normalized_data/BTC_ETH_normalized.csv', 'w')
+output_file = open('../btc_historical_data/normalized_data/BTC_ETH_normalized.csv', 'w')
+for i in range(0, len(df)):
+    output_file.write(
+        '{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12}\n'.format(
+            # Features
+            sma[i],
+            wma[i],
+            mom[i],
+            stoch_k[i],
+            stoch_d[i],
+            rsi[i],
+            macd[i],
+            macd_signal[i],
+            macd_hist[i],
+            willr[i],
+            adosc[i],
+            cci[i],
+            # Labels
+            df['close'].values[i] if i + 10 >= len(df) else df['close'].values[i + 10]
+        )
+    )
+
+#     last_ten_day_close_values = []
+
 
 # ten_days_seconds = 864000
 # first_entry_timestamp = data[0][0]
