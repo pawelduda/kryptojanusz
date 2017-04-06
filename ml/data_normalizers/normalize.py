@@ -40,39 +40,61 @@ def future_change(current_price, future_price):
 df = pd.read_csv('../btc_historical_data/data/BTC_ETH.csv', sep=',', header=0, low_memory=False)
 
 print df
-sma = talib.SMA(df['close'].values) # TODO: tweak timeperiod to be 10 days
-wma = talib.WMA(df['close'].values) # TODO: tweak timeperiod to be 10 days
-mom = talib.MOM(df['close'].values)
-stoch_k, stoch_d = talib.STOCH(df['high'].values, df['low'].values, df['close'].values)
-rsi = talib.RSI(df['close'].values)
-macd, macd_signal, macd_hist = talib.MACD(df['close'].values)
-willr = talib.WILLR(df['high'].values, df['low'].values, df['close'].values)
-adosc = talib.ADOSC(df['high'].values, df['low'].values, df['close'].values, df['quoteVolume'].values)
-cci = talib.CCI(df['high'].values, df['low'].values, df['close'].values)
+# sma = talib.SMA(df['close'].values) # TODO: tweak timeperiod to be 10 days
+# wma = talib.WMA(df['close'].values) # TODO: tweak timeperiod to be 10 days
+# mom = talib.MOM(df['close'].values)
+# stoch_k, stoch_d = talib.STOCH(df['high'].values, df['low'].values, df['close'].values)
+# rsi = talib.RSI(df['close'].values)
+# macd, macd_signal, macd_hist = talib.MACD(df['close'].values)
+# willr = talib.WILLR(df['high'].values, df['low'].values, df['close'].values)
+# adosc = talib.ADOSC(df['high'].values, df['low'].values, df['close'].values, df['quoteVolume'].values)
+# cci = talib.CCI(df['high'].values, df['low'].values, df['close'].values)
 
 output_file = open('../btc_historical_data/normalized_data/BTC_ETH_normalized.csv', 'w')
-for i in range(0, len(df)):
-    if i + 10 >= len(df):
+for i in range(100, len(df)):
+    if i + 100 >= len(df):
         break
+
+    print(i)
+
+    close = df['close'].values[i - 100:i]
+    low = df['low'].values[i - 100:i]
+    high = df['high'].values[i - 100:i]
+    quoteVolume = df['quoteVolume'].values[i - 100:i]
+
+    sma = talib.SMA(close)[-1] # TODO: tweak timeperiod to be 10 days
+    wma = talib.WMA(close)[-1] # TODO: tweak timeperiod to be 10 days
+    mom = talib.MOM(close)[-1]
+    stoch = talib.STOCH(high, low, close)
+    stoch_k = stoch[0][-1]
+    stoch_d = stoch[1][-1]
+    rsi = talib.RSI(close)[-1]
+    macd = talib.MACD(close)
+    macd_d = macd[0][-1]
+    macd_signal = macd[1][-1]
+    macd_hist = macd[2][-1]
+    willr = talib.WILLR(high, low, close)[-1]
+    adosc = talib.ADOSC(high, low, close, quoteVolume)[-1]
+    cci = talib.CCI(high, low, close)[-1]
 
     output_file.write(
         '{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13}\n'.format(
             # Features
-            sma[i],
-            wma[i],
-            mom[i],
-            stoch_k[i],
-            stoch_d[i],
-            rsi[i],
-            macd[i],
-            macd_signal[i],
-            macd_hist[i],
-            willr[i],
-            adosc[i],
-            cci[i],
+            sma,
+            wma,
+            mom,
+            stoch_k,
+            stoch_d,
+            rsi,
+            macd_d,
+            macd_signal,
+            macd_hist,
+            willr,
+            adosc,
+            cci,
             # Labels
-            df['close'].values[i] if i + 10 >= len(df) else df['close'].values[i + 10],
-            future_change(df['close'].values[i], df['close'].values[i + 10])
+            df['close'].values[i + 100],
+            future_change(df['close'].values[i], df['close'].values[i + 100])
         )
     )
 
