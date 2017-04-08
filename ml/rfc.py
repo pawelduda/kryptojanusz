@@ -22,8 +22,8 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 clf = RandomForestClassifier(
     criterion='entropy',
-    max_features=None, 
-    min_samples_leaf=20, 
+    max_features=None,
+    min_samples_leaf=20,
     n_jobs=-1
 )
 print(clf.fit(X_train, y_train))
@@ -43,6 +43,7 @@ print(metrics.accuracy_score(y_test, predicted))
 # TODO: sample the dataset
 # TODO: visualise the results on plot
 
+# http://stackoverflow.com/questions/31681373/making-svm-run-faster-in-python
 # Best:
 # RandomForestClassifier(bootstrap=True, class_weight=None, criterion='entropy',
 #             max_depth=None, max_features=None, max_leaf_nodes=None,
