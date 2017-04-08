@@ -61,7 +61,6 @@ for i in range(100, len(df)):
     low = df['low'].values[i - 100:i]
     high = df['high'].values[i - 100:i]
     quoteVolume = df['quoteVolume'].values[i - 100:i]
-
     sma = talib.SMA(close)[-1] # TODO: tweak timeperiod to be 10 days
     wma = talib.WMA(close)[-1] # TODO: tweak timeperiod to be 10 days
     mom = talib.MOM(close)[-1]
@@ -78,7 +77,7 @@ for i in range(100, len(df)):
     cci = talib.CCI(high, low, close)[-1]
 
     output_file.write(
-        '{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13}\n'.format(
+        '{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14},{15}\n'.format(
             # Features
             sma,
             wma,
@@ -94,7 +93,9 @@ for i in range(100, len(df)):
             cci,
             # Labels
             df['close'].values[i + 100],
-            future_change(df['close'].values[i], df['close'].values[i + 100])
+            future_change(df['close'].values[i], df['close'].values[i + 100]), # that's our y
+            df['close'].values[i],
+            df['date'].values[i]
         )
     )
 
