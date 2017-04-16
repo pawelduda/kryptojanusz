@@ -1,3 +1,13 @@
+# Debug settings
+PRINT_DEBUG_FOCUS = False
+
+# Classifier settings
+CLASSIFIER = {
+    'prepare_dataset': True,
+    'train': False,
+    'simulate': True
+}
+
 # https://poloniex.com/fees/
 FEES = {
     'poloniex': [
