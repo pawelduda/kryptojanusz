@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from fee import get_fee_amount
+from tools import print_debug
 import fee
 
 DECIDE_TO_BUY = 1
@@ -40,12 +41,12 @@ for i in range(1, len(dataset)):
     train_data[1].append(decision)
 
     # TODO: create a debug function which takes splat args
-    print('*****DEBUG*****')
-    print('Row #{}'.format(i))
-    print('From {} to {}'.format(first_price, next_price))
-    print('Change: {}%'.format(pct_change))
-    print(decision_str)
-    print('*****\n')
+    print_debug(
+        'Row #{}'.format(i),
+        'From {} to {}'.format(first_price, next_price),
+        'Change: {}%'.format(pct_change),
+        decision_str
+    )
 
 X, y = train_data
 X = StandardScaler().fit_transform(X)
@@ -61,15 +62,12 @@ clf = RandomForestClassifier(
 print(clf.fit(X_train, y_train))
 clf.fit(X_train, y_train)
 score = clf.score(X_test, y_test)
+print_debug('Score: {}%'.format(score))
 
-print('*****DEBUG*****')
-print('Score: {}%'.format(score))
-print('*****\n')
-
-print('*****DEBUG*****')
 cross_val_scores = cross_val_score(clf, X, y, cv=5, n_jobs=-1)
-print(cross_val_scores)
-print('Accuracy: %0.2f (+/- %0.2f)' % (cross_val_scores.mean(), cross_val_scores.std() * 2))
-print('*****\n')
+print_debug(
+    cross_val_scores,
+    'Accuracy: %0.2f (+/- %0.2f)' % (cross_val_scores.mean(), cross_val_scores.std() * 2)
+)
 
 # TODO: somehow plot this
