@@ -1,5 +1,5 @@
 # Debug settings
-PRINT_DEBUG_FOCUS_ONLY = False
+PRINT_DEBUG_FOCUS_ONLY = True
 
 # Classifier settings
 CLASSIFIER = {
