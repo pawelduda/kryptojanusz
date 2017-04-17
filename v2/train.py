@@ -5,6 +5,7 @@ from sklearn.model_selection import cross_val_score
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import pandas as pd
+import talib
 
 from settings import get_fee_amount
 from tools import print_debug, fprint_debug
@@ -20,9 +21,16 @@ if settings.CLASSIFIER['prepare_dataset']:
     dataset = pd.read_csv(dataset_file, sep=',', header=0, low_memory=False)
 
     train_data = [[], []]
-    for i in range(1, len(dataset)):
+    for i in range(2880, len(dataset)):
+        recent_close_prices = dataset['close'].values[i - 2880:i]
+        recent_high_prices = dataset['high'].values[i - 2880:i]
+        recent_low_prices = dataset['low'].values[i - 2880:i]
+
         first_price = dataset['close'].values[i - 1]
         next_price = dataset['close'].values[i]
+        momentum = talib.MOM(recent_close_prices)[-1]
+        rsi = talib.RSI(recent_close_prices)[-1]
+        cci = talib.CCI(recent_high_prices, recent_low_prices, recent_close_prices)[-1]
 
         change = next_price - first_price
         pct_change = change / first_price
@@ -40,7 +48,7 @@ if settings.CLASSIFIER['prepare_dataset']:
             decision = DECIDE_TO_SELL
             decision_str = 'SELL'
 
-        train_data[0].append((first_price, next_price))
+        train_data[0].append((first_price, next_price, momentum, rsi, cci))
         train_data[1].append(decision)
 
         print_debug(
@@ -50,8 +58,7 @@ if settings.CLASSIFIER['prepare_dataset']:
             decision_str
         )
 
-    X, y = train_data
-    # X = StandardScaler().fit_transform(X)
+    X, y = train_data # X = StandardScaler().fit_transform(X)
     # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.4, random_state=0)
     X_train = X
     X_test = X
@@ -83,8 +90,15 @@ if settings.CLASSIFIER['train']:
 
 BTC = 'BTC'
 ALT = 'ALT'
+
+# Plot data
 prices = []
+actions_taken = []
 projected_btc_balances = []
+momentum_values = []
+rsi_values = []
+cci_values = []
+
 transactions_made = 0
 
 if settings.CLASSIFIER['simulate']:
@@ -98,9 +112,11 @@ if settings.CLASSIFIER['simulate']:
     previous_projected_btc_balance = None
     projected_btc_balance = balance_btc
 
-    for i, prediction in enumerate(predicted[90000:92000], 90000):
+    STARTING_INDEX = 130000
+    AMOUNT_OF_ROWS = 35000
+    for i, prediction in enumerate(predicted[STARTING_INDEX:STARTING_INDEX + AMOUNT_OF_ROWS], STARTING_INDEX):
         action_taken = 'n/a'
-        previous_alt_price, current_alt_price = X_test[i]
+        previous_alt_price, current_alt_price, momentum, rsi, cci = X_test[i]
 
         previous_projected_btc_balance = projected_btc_balance
 
@@ -144,6 +160,10 @@ if settings.CLASSIFIER['simulate']:
         # Gather data for plot
         projected_btc_balances.append(projected_btc_balance)
         prices.append(current_alt_price)
+        actions_taken.append(action_taken)
+        momentum_values.append(momentum)
+        rsi_values.append(rsi)
+        cci_values.append(cci)
 
         fprint_debug(
             'Alt price change: {}'.format(X_test[i]),
@@ -161,14 +181,30 @@ if settings.CLASSIFIER['simulate']:
             raise 'nope'
 
 # ***** PLOT *****
+# TODO: show arrows when altcoin was bought/sold
 plot_X = range(0, len(projected_btc_balances))
 
-f, axarr = plt.subplots(2, sharex=True)
+f, axarr = plt.subplots(5, sharex=True)
 
 axarr[0].plot(plot_X, prices)
 axarr[0].set_title('Altcoin price over time (BTC)')
 
+for i, action_taken in enumerate(actions_taken):
+    if action_taken == 'BUY':
+        axarr[0].arrow(i, prices[i], 0, 0.005, fc='k', ec='k')
+    elif action_taken == 'SELL':
+        axarr[0].arrow(i, prices[i], 0, -0.005, fc='k', ec='k')
+
 axarr[1].plot(plot_X, projected_btc_balances)
 axarr[1].set_title('Simulated BTC balance over time')
+
+axarr[2].plot(plot_X, momentum_values)
+axarr[2].set_title('Momentum')
+
+axarr[3].plot(plot_X, rsi_values)
+axarr[3].set_title('RSI')
+
+axarr[4].plot(plot_X, cci_values)
+axarr[4].set_title('CCI')
 
 plt.show()
