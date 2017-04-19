@@ -10,12 +10,16 @@ from sklearn.svm import SVC
 import glob
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 import pandas as pd
+import sys
 import talib
 
 from settings import get_fee_amount
 from tools import print_debug, fprint_debug
 import settings
+
+csv_stats_filename = 'btc_historical_data/data/prepared_data/stats.csv'
 
 DECIDE_TO_BUY = 1
 DECIDE_TO_HOLD = 0
@@ -94,13 +98,19 @@ def simulate_for_dataset(train_data_pkl_path):
     if settings.CLASSIFIER['simulate']:
         clf = joblib.load('clf_v2.pkl')
 
-        # TODO: apply fees
+        # TODO: this is a hard-coded, worst case scenario fee. Adjust accordingly in the future.
+        fee = 0.0025
         predicted = clf.predict(X_test)
         balance_btc = 1.
         balance_alt = 0.
         currency_owned = BTC
         previous_projected_btc_balance = None
         projected_btc_balance = balance_btc
+
+        # For stats
+        fees_paid = 0.
+        lowest_balance_btc = balance_btc
+        highest_balance_btc = balance_btc
 
         STARTING_INDEX = 0
         AMOUNT_OF_ROWS = 170000
@@ -126,8 +136,13 @@ def simulate_for_dataset(train_data_pkl_path):
             elif prediction == DECIDE_TO_BUY and currency_owned == BTC:
                 action_taken = 'BUY'
 
+                calculated_fee = balance_btc * fee
+                balance_btc -= calculated_fee
+                fees_paid += calculated_fee
+
                 balance_alt = balance_btc / current_alt_price
                 balance_btc = 0.
+
                 currency_owned = ALT
 
                 projected_btc_balance = balance_alt * current_alt_price
@@ -136,8 +151,13 @@ def simulate_for_dataset(train_data_pkl_path):
             elif prediction == DECIDE_TO_SELL and currency_owned == ALT:
                 action_taken = 'SELL'
 
+                calculated_fee = balance_alt * fee
+                balance_alt -= calculated_fee
+                fees_paid += calculated_fee
+
                 balance_btc = balance_alt * current_alt_price
                 balance_alt = 0.
+
                 currency_owned = BTC
 
                 projected_btc_balance = balance_btc
@@ -149,6 +169,12 @@ def simulate_for_dataset(train_data_pkl_path):
                     projected_btc_balance = balance_btc
                 elif currency_owned == ALT:
                     projected_btc_balance = balance_alt * current_alt_price
+
+            # Update lowest/highest balance
+            if projected_btc_balance < lowest_balance_btc:
+                lowest_balance_btc = projected_btc_balance
+            elif projected_btc_balance > highest_balance_btc:
+                highest_balance_btc = projected_btc_balance
 
             # Gather data for plot
             projected_btc_balances.append(projected_btc_balance)
@@ -185,9 +211,31 @@ def simulate_for_dataset(train_data_pkl_path):
             if balance_btc == 0. and balance_alt == 0.:
                 raise 'nope'
 
+    if transactions_made > 0:
+        transactions_frequency_min = len(train_data[0]) / transactions_made * 5
+    else:
+        transactions_frequency_min = 0
+
     fprint_debug(
-        'Transactions made: {}'.format(transactions_made)
+        'Transactions made: {}'.format(transactions_made),
+        'Fees paid: {}'.format(fees_paid),
+        'Lowest BTC balance: {}'.format(lowest_balance_btc),
+        'Highest BTC balance: {}'.format(highest_balance_btc),
+        'Amount of data samples: {}'.format(len(train_data[0])),
+        'Data samples / transactions frequency * 5 min: {} minutes'.format(transactions_frequency_min)
     )
+
+    output_filename = train_data_pkl_path.split('.')[0]
+
+    # ***** Store results as CSV *****
+    output_csv_file = open(csv_stats_filename, 'a+')
+    output_csv_file.write(
+        '{},{},{},{},{},{},{}\n'.format(
+            output_filename, transactions_made, lowest_balance_btc, highest_balance_btc, fees_paid,
+            len(train_data[0]), transactions_frequency_min
+        )
+    )
+    output_csv_file.close()
 
     # ***** PLOT *****
     plot_X = range(0, len(projected_btc_balances))
@@ -223,15 +271,18 @@ def simulate_for_dataset(train_data_pkl_path):
 
     # plt.show()
 
-    plot_filename = train_data_pkl_path.split('.')[0]
-
     figure.set_size_inches(19.2, 10.8)
-    figure.savefig('{}.png'.format(plot_filename), dpi=100)
+    figure.savefig('{}.png'.format(output_filename), dpi=100)
 
 def simulate_for_all_datasets():
-    for source_filename in sorted(glob.glob('btc_historical_data/data/prepared_data/*.pkl')):
-        simulate_for_dataset(source_filename)
-        fprint_debug('Simulation done for {}'.format(source_filename))
+    if sys.argv[1] == '1':
+        for source_filename in sorted(glob.glob('btc_historical_data/data/prepared_data/*.pkl'))[0:40]:
+            simulate_for_dataset(source_filename)
+            fprint_debug('Simulation done for {}'.format(source_filename))
+    elif sys.argv[1] == '2':
+        for source_filename in sorted(glob.glob('btc_historical_data/data/prepared_data/*.pkl'))[41:-1]:
+            simulate_for_dataset(source_filename)
+            fprint_debug('Simulation done for {}'.format(source_filename))
 
 simulate_for_all_datasets()
 # simulate_for_dataset('btc_historical_data/data/prepared_data/BTC_ETH.pkl')
