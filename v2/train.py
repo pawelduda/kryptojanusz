@@ -5,7 +5,7 @@ from sklearn.externals import joblib
 from sklearn.model_selection import cross_val_score
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.svm import SVC
 import glob
 import matplotlib.pyplot as plt
@@ -22,7 +22,7 @@ DECIDE_TO_HOLD = 0
 DECIDE_TO_SELL = -1
 
 dataset = []
-scaler = StandardScaler()
+scaler = MinMaxScaler()
 
 def simulate_for_dataset(train_data_pkl_path):
     train_data = joblib.load(train_data_pkl_path)
@@ -51,7 +51,7 @@ def simulate_for_dataset(train_data_pkl_path):
         # clf = KNeighborsClassifier(5) # looks a bit better
         # clf = KNeighborsClassifier(10) # 10 seems to be the most optimal for KNeighbors, however still shitty
 
-        print(clf.fit(X_train, y_train))
+        clf.fit(X_train, y_train)
         score = clf.score(X_test, y_test)
         print_debug('Score: {}%'.format(score))
 
@@ -84,6 +84,10 @@ def simulate_for_dataset(train_data_pkl_path):
     macd_d_hist_values = []
     willr_values = []
     adosc_values = []
+    obv_values = []
+    aroon_down_values = []
+    aroon_up_values = []
+    atr_values = []
 
     transactions_made = 0
 
@@ -104,7 +108,8 @@ def simulate_for_dataset(train_data_pkl_path):
             action_taken = 'n/a'
 
             previous_alt_price, current_alt_price, sma, wma, momentum, rsi, cci, \
-            stoch_k, stoch_d, macd_d, macd_signal, macd_hist, willr, adosc = X_test[i]
+            stoch_k, stoch_d, macd_d, macd_signal, macd_hist, willr, adosc, obv, aroon_down, aroon_up, \
+            atr = X_test[i]
 
             previous_projected_btc_balance = projected_btc_balance
 
@@ -149,18 +154,22 @@ def simulate_for_dataset(train_data_pkl_path):
             projected_btc_balances.append(projected_btc_balance)
             prices.append(current_alt_price)
             actions_taken.append(action_taken)
-            sma_values.append(sma)
-            wma_values.append(wma)
-            momentum_values.append(momentum)
-            rsi_values.append(rsi)
-            cci_values.append(cci)
-            stoch_k_values.append(stoch_k)
-            stoch_d_values.append(stoch_d)
-            macd_d_values.append(macd_d)
-            macd_d_signal_values.append(macd_signal)
-            macd_d_hist_values.append(macd_hist)
-            willr_values.append(willr)
-            adosc_values.append(adosc)
+            # sma_values.append(sma)
+            # wma_values.append(wma)
+            # momentum_values.append(momentum)
+            # rsi_values.append(rsi)
+            # cci_values.append(cci)
+            # stoch_k_values.append(stoch_k)
+            # stoch_d_values.append(stoch_d)
+            # macd_d_values.append(macd_d)
+            # macd_d_signal_values.append(macd_signal)
+            # macd_d_hist_values.append(macd_hist)
+            # willr_values.append(willr)
+            # adosc_values.append(adosc)
+            # obv_values.append(obv)
+            # aroon_down_values.append(aroon_down)
+            # aroon_up_values.append(aroon_up)
+            # atr_values.append(atr)
 
             print_debug(
                 'Alt price change: {}'.format(X_test[i]),
@@ -225,3 +234,4 @@ def simulate_for_all_datasets():
         fprint_debug('Simulation done for {}'.format(source_filename))
 
 simulate_for_all_datasets()
+# simulate_for_dataset('btc_historical_data/data/prepared_data/BTC_ETH.pkl')

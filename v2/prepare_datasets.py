@@ -2,6 +2,7 @@ from sklearn.externals import joblib
 from sklearn.preprocessing import StandardScaler
 import glob, os
 import pandas as pd
+import sys
 import talib
 
 from settings import get_fee_amount
@@ -21,6 +22,7 @@ def prepare_dataset(dataset_path, output_dataset_path):
     # 288 = 1 day with historical data, will have to be tweaked for the real data
     LOOKBACK_DELTA = 288
     train_data = [[], []]
+
     for i in range(LOOKBACK_DELTA, len(dataset)):
         recent_close_prices = dataset['close'].values[i - LOOKBACK_DELTA:i]
         recent_high_prices = dataset['high'].values[i - LOOKBACK_DELTA:i]
@@ -48,6 +50,12 @@ def prepare_dataset(dataset_path, output_dataset_path):
         willr = talib.WILLR(recent_high_prices, recent_low_prices, recent_close_prices)[-1]
         adosc = talib.ADOSC(recent_high_prices, recent_low_prices, recent_close_prices, recent_quote_volume)[-1]
 
+        obv = talib.OBV(recent_close_prices, recent_quote_volume)[-1]
+        aroon = talib.AROON(recent_high_prices, recent_low_prices)
+        aroon_down = aroon[0][-1]
+        aroon_up = aroon[1][-1]
+        atr = talib.ATR(recent_high_prices, recent_low_prices, recent_close_prices)[-1]
+
         change = next_price - first_price
         pct_change = change / first_price
         fee_pct = get_fee_amount()
@@ -65,7 +73,10 @@ def prepare_dataset(dataset_path, output_dataset_path):
             decision_str = 'SELL'
 
         train_data[0].append(
-            (first_price, next_price, sma, wma, momentum, rsi, cci, stoch_k, stoch_d, macd_d, macd_signal, macd_hist, willr, adosc)
+            (
+                first_price, next_price, sma, wma, momentum, rsi, cci, stoch_k, stoch_d,
+                macd_d, macd_signal, macd_hist, willr, adosc, obv, aroon_down, aroon_up, atr
+            )
         )
         train_data[1].append(decision)
 
@@ -81,9 +92,16 @@ def prepare_dataset(dataset_path, output_dataset_path):
 def prepare_all_datasets():
     os.chdir('btc_historical_data/data')
 
-    for source_filename in sorted(glob.glob('*.csv')):
-        target_filename = source_filename.split('.')[0]
-        prepare_dataset(source_filename, 'prepared_data/{}.pkl'.format(target_filename))
-        fprint_debug('Prepared dataset for {}'.format(target_filename))
+    if sys.argv[1] == '1':
+        for source_filename in sorted(glob.glob('*.csv'))[0:40]:
+            target_filename = source_filename.split('.')[0]
+            prepare_dataset(source_filename, 'prepared_data/{}.pkl'.format(target_filename))
+            fprint_debug('Prepared dataset for {}'.format(target_filename))
+    elif sys.argv[1] == '2':
+        for source_filename in sorted(glob.glob('*.csv'))[41:-1]:
+            target_filename = source_filename.split('.')[0]
+            prepare_dataset(source_filename, 'prepared_data/{}.pkl'.format(target_filename))
+            fprint_debug('Prepared dataset for {}'.format(target_filename))
 
 prepare_all_datasets()
+# prepare_dataset('btc_historical_data/data/BTC_ETH.csv', 'btc_historical_data/data/prepared_data/BTC_ETH.pkl')
