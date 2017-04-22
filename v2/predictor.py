@@ -12,8 +12,8 @@ LOOKBACK_DELTA = 288
 
 # first_price, next_price, sma, wma, momentum, rsi, cci, stoch_k, stoch_d,
 # macd_d, macd_signal, macd_hist, willr, adosc, obv, aroon_down, aroon_up, atr
-def predict_newest(poloniex_prices_response_str, columns):
-    dataset = pd.read_json(poloniex_prices_response_str, convert_dates=False)
+def predict_newest(poloniex_api_url, columns):
+    dataset = pd.read_json(poloniex_api_url, convert_dates=False)
     dataset = dataset.to_csv(index=False, columns=columns)
     dataset = StringIO(unicode(dataset))
     dataset = pd.read_csv(dataset, sep=',', header=0, low_memory=False)
@@ -23,6 +23,7 @@ def predict_newest(poloniex_prices_response_str, columns):
     clf = joblib.load('clf_v2.pkl')
 
     features = []
+    most_recent_price = None
 
     for i in range(LOOKBACK_DELTA, len(dataset)):
         recent_close_prices = dataset['close'].values[i - LOOKBACK_DELTA:i]
@@ -70,6 +71,7 @@ def predict_newest(poloniex_prices_response_str, columns):
             )
         )
 
+        most_recent_price = next_price
+
     predictions = clf.predict(features)
-    print predictions
-    return int(predictions[-1])
+    return (int(predictions[-1]), float(most_recent_price))

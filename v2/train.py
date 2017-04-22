@@ -101,7 +101,7 @@ def simulate_for_dataset(train_data_pkl_path):
         # TODO: this is a hard-coded, worst case scenario fee. Adjust accordingly in the future.
         fee = 0.0025
         predicted = clf.predict(X_test)
-        balance_btc = 1.
+        balance_btc = 0.008
         balance_alt = 0.
         currency_owned = BTC
         previous_projected_btc_balance = None
@@ -269,20 +269,24 @@ def simulate_for_dataset(train_data_pkl_path):
     # axarr[6].plot(plot_X, cci_values)
     # axarr[6].set_title('CCI')
 
+    plt.yscale('log')
     # plt.show()
 
     figure.set_size_inches(19.2, 10.8)
     figure.savefig('{}.png'.format(output_filename), dpi=100)
 
 def simulate_for_all_datasets():
-    if sys.argv[1] == '1':
-        for source_filename in sorted(glob.glob('btc_historical_data/data/prepared_data/*.pkl'))[0:40]:
-            simulate_for_dataset(source_filename)
-            fprint_debug('Simulation done for {}'.format(source_filename))
-    elif sys.argv[1] == '2':
-        for source_filename in sorted(glob.glob('btc_historical_data/data/prepared_data/*.pkl'))[41:-1]:
-            simulate_for_dataset(source_filename)
-            fprint_debug('Simulation done for {}'.format(source_filename))
+    for source_filename in sorted(glob.glob('btc_historical_data/data/prepared_data/*.pkl')):
+        simulate_for_dataset(source_filename)
+        fprint_debug('Simulation done for {}'.format(source_filename))
+    # if sys.argv[1] == '1':
+    #     for source_filename in sorted(glob.glob('btc_historical_data/data/prepared_data/*.pkl'))[0:40]:
+    #         simulate_for_dataset(source_filename)
+    #         fprint_debug('Simulation done for {}'.format(source_filename))
+    # elif sys.argv[1] == '2':
+    #     for source_filename in sorted(glob.glob('btc_historical_data/data/prepared_data/*.pkl'))[41:-1]:
+    #         simulate_for_dataset(source_filename)
+    #         fprint_debug('Simulation done for {}'.format(source_filename))
 
-simulate_for_all_datasets()
-# simulate_for_dataset('btc_historical_data/data/prepared_data/BTC_ETH.pkl')
+# simulate_for_all_datasets()
+simulate_for_dataset('btc_historical_data/data/prepared_data/BTC_ETH.pkl')
