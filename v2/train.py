@@ -75,6 +75,7 @@ def simulate_for_dataset(train_data_pkl_path):
     # Plot data
     prices = []
     actions_taken = []
+    # predicted_probabilities = []
     projected_btc_balances = []
     sma_values = []
     wma_values = []
@@ -101,6 +102,7 @@ def simulate_for_dataset(train_data_pkl_path):
         # TODO: this is a hard-coded, worst case scenario fee. Adjust accordingly in the future.
         fee = 0.0025
         predicted = clf.predict(X_test)
+        # predicted_probabilities = clf.predict_proba(X_test)
         balance_btc = 0.008
         balance_alt = 0.
         currency_owned = BTC
@@ -112,9 +114,10 @@ def simulate_for_dataset(train_data_pkl_path):
         lowest_balance_btc = balance_btc
         highest_balance_btc = balance_btc
 
-        STARTING_INDEX = 0
-        AMOUNT_OF_ROWS = 170000
-        for i, prediction in enumerate(predicted[STARTING_INDEX:STARTING_INDEX + AMOUNT_OF_ROWS], STARTING_INDEX):
+        # STARTING_INDEX = 170000 - 2880
+        # AMOUNT_OF_ROWS = 5000
+        # for i, prediction in enumerate(predicted[STARTING_INDEX:STARTING_INDEX + AMOUNT_OF_ROWS], STARTING_INDEX):
+        for i, prediction in enumerate(predicted):
             action_taken = 'n/a'
 
             previous_alt_price, current_alt_price, sma, wma, momentum, rsi, cci, \
@@ -240,7 +243,7 @@ def simulate_for_dataset(train_data_pkl_path):
     # ***** PLOT *****
     plot_X = range(0, len(projected_btc_balances))
 
-    figure, axarr = plt.subplots(2, sharex=True)
+    figure, axarr = plt.subplots(5, sharex=True)
 
     axarr[0].plot(plot_X, prices)
     axarr[0].set_title('Altcoin price over time (BTC)')
@@ -253,6 +256,15 @@ def simulate_for_dataset(train_data_pkl_path):
 
     axarr[1].plot(plot_X, projected_btc_balances)
     axarr[1].set_title('Simulated BTC balance over time')
+
+    # axarr[2].plot(plot_X, predicted_probabilities[:,0])
+    # axarr[2].set_title('Probability that this is BUY')
+
+    # axarr[3].plot(plot_X, predicted_probabilities[:,1])
+    # axarr[3].set_title('Probability that this is HOLD')
+
+    # axarr[4].plot(plot_X, predicted_probabilities[:,2])
+    # axarr[4].set_title('Probability that this is SELL')
 
     # axarr[2].plot(plot_X, sma_values)
     # axarr[2].set_title('SMA')
@@ -288,5 +300,5 @@ def simulate_for_all_datasets():
     #         simulate_for_dataset(source_filename)
     #         fprint_debug('Simulation done for {}'.format(source_filename))
 
-# simulate_for_all_datasets()
-simulate_for_dataset('btc_historical_data/data/prepared_data/BTC_ETH.pkl')
+simulate_for_all_datasets()
+# simulate_for_dataset('btc_historical_data/data/prepared_data/BTC_PINK.pkl')
