@@ -1,5 +1,5 @@
 # Debug settings
-PRINT_DEBUG_FOCUS_ONLY = True
+PRINT_DEBUG_FOCUS_ONLY = False
 
 # Classifier settings
 CLASSIFIER = {
@@ -34,9 +34,12 @@ TRADE_MODE = 'taker' # TODO -- in the future, make this more dynamicly chosen vi
 # n = trade when if & when projected profit >= nx fees
 FEE_MANAGEMENT_STRATEGY = 1
 
-def get_fee_amount(volume=TRADE_VOLUME_TRAILING_30_DAYS, mode=TRADE_MODE):
+def get_fee_amount_poloniex(volume=TRADE_VOLUME_TRAILING_30_DAYS, mode=TRADE_MODE):
     for meta in FEES['poloniex']:
         if meta['volume'] == volume:
             return meta[mode]
 
     raise 'could not find fee amount for {} / {}'.format(volume, mode)
+
+def get_fee_amount_bittrex():
+    return 0.0025;

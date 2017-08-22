@@ -15,7 +15,7 @@ import pandas as pd
 import sys
 import talib
 
-from settings import get_fee_amount
+from settings import get_fee_amount_bittrex
 from tools import print_debug, fprint_debug
 import settings
 
@@ -31,43 +31,6 @@ scaler = MinMaxScaler()
 def simulate_for_dataset(train_data_pkl_path):
     train_data = joblib.load(train_data_pkl_path)
     X, y = train_data
-    # X = scaler.fit_transform(X)
-    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.4, random_state=0)
-    X_train = X
-    X_test = X
-    y_train = y
-    y_test = y
-
-    if settings.CLASSIFIER['train']:
-        # clf = RandomForestClassifier(
-        #     criterion='entropy',
-        #     max_features=None,
-        #     min_samples_leaf=20,
-        #     n_jobs=-1
-        # ) # looks promising
-        # Overall the classifiers seem to get better the more data columns they get
-        # clf = SVC(kernel='linear', C=0.025)
-        # clf = GaussianNB()
-        # clf = LinearDiscriminantAnalysis()
-        # clf = QuadraticDiscriminantAnalysis()
-        clf = AdaBoostClassifier() # looks very promising
-        # clf = KNeighborsClassifier(3) # looks shitty
-        # clf = KNeighborsClassifier(5) # looks a bit better
-        # clf = KNeighborsClassifier(10) # 10 seems to be the most optimal for KNeighbors, however still shitty
-
-        clf.fit(X_train, y_train)
-        score = clf.score(X_test, y_test)
-        print_debug('Score: {}%'.format(score))
-
-        # cross_val_scores = cross_val_score(clf, X, y, cv=5, n_jobs=-1)
-        # print_debug(
-        #     cross_val_scores,
-        #     'Accuracy: %0.2f (+/- %0.2f)' % (cross_val_scores.mean(), cross_val_scores.std() * 2)
-        # )
-        joblib.dump(clf, 'clf_v2.pkl')
-
-    # ***** Naive simulation *****
-    # X_test = scaler.inverse_transform(X_test)
 
     BTC = 'BTC'
     ALT = 'ALT'
@@ -94,14 +57,16 @@ def simulate_for_dataset(train_data_pkl_path):
     aroon_up_values = []
     atr_values = []
 
+    lower_bbands = []
+    upper_bbands = []
+
+    stoch_rsi_k_values = []
+
     transactions_made = 0
 
     if settings.CLASSIFIER['simulate']:
-        clf = joblib.load('clf_v2.pkl')
-
         # TODO: this is a hard-coded, worst case scenario fee. Adjust accordingly in the future.
         fee = 0.0025
-        predicted = clf.predict(X_test)
         # predicted_probabilities = clf.predict_proba(X_test)
         balance_btc = 0.008
         balance_alt = 0.
@@ -117,12 +82,14 @@ def simulate_for_dataset(train_data_pkl_path):
         # STARTING_INDEX = 170000 - 2880
         # AMOUNT_OF_ROWS = 5000
         # for i, prediction in enumerate(predicted[STARTING_INDEX:STARTING_INDEX + AMOUNT_OF_ROWS], STARTING_INDEX):
-        for i, prediction in enumerate(predicted):
+        for i, prediction in enumerate(y):
+            if i == 0:
+                pass
+
             action_taken = 'n/a'
 
-            previous_alt_price, current_alt_price, sma, wma, momentum, rsi, cci, \
-            stoch_k, stoch_d, macd_d, macd_signal, macd_hist, willr, adosc, obv, aroon_down, aroon_up, \
-            atr = X_test[i]
+            high_price, low_price, close_price, upper_bband, lower_bband, stoch_rsi_k = X[i]
+            previous_alt_price = X[i - 1][2]
 
             previous_projected_btc_balance = projected_btc_balance
 
@@ -133,8 +100,8 @@ def simulate_for_dataset(train_data_pkl_path):
                     balance_btc # does not change
                     projected_btc_balance = balance_btc
                 elif currency_owned == ALT:
-                    balance_alt = (balance_alt / previous_alt_price) * current_alt_price
-                    projected_btc_balance = balance_alt * current_alt_price
+                    balance_alt = (balance_alt / previous_alt_price) * close_price
+                    projected_btc_balance = balance_alt * close_price
 
             elif prediction == DECIDE_TO_BUY and currency_owned == BTC:
                 action_taken = 'BUY'
@@ -143,12 +110,12 @@ def simulate_for_dataset(train_data_pkl_path):
                 balance_btc -= calculated_fee
                 fees_paid += calculated_fee
 
-                balance_alt = balance_btc / current_alt_price
+                balance_alt = balance_btc / close_price
                 balance_btc = 0.
 
                 currency_owned = ALT
 
-                projected_btc_balance = balance_alt * current_alt_price
+                projected_btc_balance = balance_alt * close_price
 
                 transactions_made += 1
             elif prediction == DECIDE_TO_SELL and currency_owned == ALT:
@@ -158,7 +125,7 @@ def simulate_for_dataset(train_data_pkl_path):
                 balance_alt -= calculated_fee
                 fees_paid += calculated_fee
 
-                balance_btc = balance_alt * current_alt_price
+                balance_btc = balance_alt * close_price
                 balance_alt = 0.
 
                 currency_owned = BTC
@@ -171,7 +138,7 @@ def simulate_for_dataset(train_data_pkl_path):
                 if currency_owned == BTC:
                     projected_btc_balance = balance_btc
                 elif currency_owned == ALT:
-                    projected_btc_balance = balance_alt * current_alt_price
+                    projected_btc_balance = balance_alt * close_price
 
             # Update lowest/highest balance
             if projected_btc_balance < lowest_balance_btc:
@@ -181,8 +148,14 @@ def simulate_for_dataset(train_data_pkl_path):
 
             # Gather data for plot
             projected_btc_balances.append(projected_btc_balance)
-            prices.append(current_alt_price)
+            prices.append(close_price)
             actions_taken.append(action_taken)
+
+            upper_bbands.append(upper_bband)
+            lower_bbands.append(lower_bband)
+
+            stoch_rsi_k_values.append(stoch_rsi_k)
+
             # sma_values.append(sma)
             # wma_values.append(wma)
             # momentum_values.append(momentum)
@@ -200,17 +173,17 @@ def simulate_for_dataset(train_data_pkl_path):
             # aroon_up_values.append(aroon_up)
             # atr_values.append(atr)
 
-            print_debug(
-                'Alt price change: {}'.format(X_test[i]),
-                'Action taken: {}'.format(action_taken),
-                'BTC balance after decision: {}'.format(balance_btc),
-                'Alt balance after decision: {}'.format(balance_alt),
-                'Previous projected BTC balance: {}'.format(previous_projected_btc_balance),
-                'Projected BTC balance: {}'.format(projected_btc_balance),
-                'Currency owned: {}'.format(currency_owned),
-                'Rows analyzed: {}'.format(i),
-                'Transactions made: {}'.format(transactions_made)
-            )
+            # print_debug(
+                # 'Alt price change: {}'.format(X[i]),
+                # 'Action taken: {}'.format(action_taken),
+                # 'BTC balance after decision: {}'.format(balance_btc),
+                # 'Alt balance after decision: {}'.format(balance_alt),
+                # 'Previous projected BTC balance: {}'.format(previous_projected_btc_balance),
+                # 'Projected BTC balance: {}'.format(projected_btc_balance),
+                # 'Currency owned: {}'.format(currency_owned),
+                # 'Rows analyzed: {}'.format(i),
+                # 'Transactions made: {}'.format(transactions_made)
+            # )
             if balance_btc == 0. and balance_alt == 0.:
                 raise 'nope'
 
@@ -243,22 +216,24 @@ def simulate_for_dataset(train_data_pkl_path):
     # ***** PLOT *****
     plot_X = range(0, len(projected_btc_balances))
 
-    figure, axarr = plt.subplots(5, sharex=True)
+    figure, axarr = plt.subplots(3, sharex=True)
 
     axarr[0].plot(plot_X, prices)
+    axarr[0].plot(plot_X, upper_bbands)
+    axarr[0].plot(plot_X, lower_bbands)
     axarr[0].set_title('Altcoin price over time (BTC)')
 
     for i, action_taken in enumerate(actions_taken):
         if action_taken == 'BUY':
-            axarr[0].arrow(i, prices[i], 0, 0.005, fc='k', ec='k')
-        elif action_taken == 'SELL':
             axarr[0].arrow(i, prices[i], 0, -0.005, fc='k', ec='k')
+        elif action_taken == 'SELL':
+            axarr[0].arrow(i, prices[i], 0, 0.005, fc='k', ec='k')
 
     axarr[1].plot(plot_X, projected_btc_balances)
     axarr[1].set_title('Simulated BTC balance over time')
 
-    # axarr[2].plot(plot_X, predicted_probabilities[:,0])
-    # axarr[2].set_title('Probability that this is BUY')
+    axarr[2].plot(plot_X, stoch_rsi_k_values)
+    axarr[2].set_title('Stochastic RSI K')
 
     # axarr[3].plot(plot_X, predicted_probabilities[:,1])
     # axarr[3].set_title('Probability that this is HOLD')
@@ -282,7 +257,7 @@ def simulate_for_dataset(train_data_pkl_path):
     # axarr[6].set_title('CCI')
 
     plt.yscale('log')
-    # plt.show()
+    plt.show()
 
     figure.set_size_inches(19.2, 10.8)
     figure.savefig('{}.png'.format(output_filename), dpi=100)
