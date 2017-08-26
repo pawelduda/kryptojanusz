@@ -43,5 +43,16 @@ def predict_newest(chart_data):
 
     newest_signal = signals[-1]
     retrieval_date_gmt = dataframe['T'].values[-1]
+    last_price = close_prices[-1]
+    last_upper_bband = upper_bband[-1]
+    last_lower_bband = lower_bband[-1]
+    last_stoch_rsi_k = stoch_rsi_k[-1]
 
-    return (int(newest_signal), str(retrieval_date_gmt))
+    return (
+        int(newest_signal),
+        str(retrieval_date_gmt),
+        float(last_upper_bband),
+        float(last_price),
+        float(last_lower_bband),
+        float(last_stoch_rsi_k)
+    )
