@@ -5,10 +5,12 @@ DECIDE_TO_BUY = 1
 DECIDE_TO_HOLD = 0
 DECIDE_TO_SELL = -1
 
-def predict_newest(market_ticks, latest_tick):
+def predict_newest(market_ticks, latest_tick = None):
     market_ticks = pd.read_json(market_ticks, convert_dates=True)
-    latest_tick = pd.read_json(latest_tick, convert_dates=True)
-    market_ticks.append(latest_tick)
+
+    if latest_tick:
+        latest_tick = pd.read_json(latest_tick, convert_dates=True)
+        market_ticks.append(latest_tick)
 
     market_ticks['T'] = pd.to_datetime(market_ticks['T'], utc=True)
 
@@ -32,10 +34,10 @@ def predict_newest(market_ticks, latest_tick):
 
     signals = []
     for i in range(len(market_ticks)):
-        if low_prices[i] <= lower_bband[i] and stoch_rsi_k[i] <= 20.:
+        if close_prices[i] <= lower_bband[i] and stoch_rsi_k[i] <= 20.:
             decision = DECIDE_TO_BUY
             # decision_str = 'BUY'
-        elif high_prices[i] >= upper_bband[i] and stoch_rsi_k[i] >= 80.:
+        elif close_prices[i] >= upper_bband[i] and stoch_rsi_k[i] >= 80.:
             decision = DECIDE_TO_SELL
             # decision_str = 'SELL'
         else:

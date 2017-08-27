@@ -45,10 +45,10 @@ def prepare_dataset(dataset_path, output_dataset_path):
 
     decisions = []
     for i in range(len(dataset)):
-        if low_prices[i] <= lower_bband[i] and stoch_rsi_k[i] <= 20.:
+        if close_prices[i] <= lower_bband[i] and stoch_rsi_k[i] <= 20.:
             decision = DECIDE_TO_BUY
             # decision_str = 'BUY'
-        elif high_prices[i] >= upper_bband[i] and stoch_rsi_k[i] >= 80.:
+        elif close_prices[i] >= upper_bband[i] and stoch_rsi_k[i] >= 80.:
             decision = DECIDE_TO_SELL
             # decision_str = 'SELL'
         else:

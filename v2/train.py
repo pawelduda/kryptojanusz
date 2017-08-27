@@ -216,12 +216,12 @@ def simulate_for_dataset(train_data_pkl_path):
     # ***** PLOT *****
     plot_X = range(0, len(projected_btc_balances))
 
-    figure, axarr = plt.subplots(3, sharex=True)
+    figure, axarr = plt.subplots(2, sharex=True)
 
     axarr[0].plot(plot_X, prices)
     axarr[0].plot(plot_X, upper_bbands)
     axarr[0].plot(plot_X, lower_bbands)
-    axarr[0].set_title('Altcoin price over time (BTC)')
+    axarr[0].set_title('Altcoin ({}) price over time (BTC)'.format(output_filename))
 
     for i, action_taken in enumerate(actions_taken):
         if action_taken == 'BUY':
